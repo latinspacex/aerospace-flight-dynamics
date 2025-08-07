@@ -1,123 +1,32 @@
 function PlotSpeeds(t, Vcggs)
-% Plots a 2×2 grid of East/North/Zenith & Relative speeds vs. Time
-%
-% Inputs:
-%   t      – [1×n] time (s)
-%   Vcggs  – [3×n] ENZ‐velocity (m/s) w.r.t. GS:
-%             row 1 → East, row 2 → North, row 3 → Zenith
 
-    n = numel(t);
-    % [] Number of elements in the time vector.
+    figure('Color','w', 'Name','Speeds', 'NumberTitle','Off');
+    
+    % --- East Speed ---
+    subplot(3,1,1);
+    plot(t, Vcggs(1,:), '.k');
+    title('East', 'FontName','Arial', 'FontSize',16, 'FontWeight','Bold');
+    xlabel('Time (s)', 'FontName','Arial', 'FontSize',12, 'FontWeight','Bold');
+    ylabel('Speed (m/s)', 'FontName','Arial', 'FontSize',12, 'FontWeight','Bold');
+    grid on;
+    set(gca, 'FontName','Arial', 'FontSize',8, 'FontWeight','Bold');
 
-    %— pre‐allocate the four speed traces:
-    eSpd   = zeros(1,n);    % East speed
-    nSpd   = zeros(1,n);    % North speed
-    zSpd   = zeros(1,n);    % Zenith speed
-    relSpd = zeros(1,n);    % Total (relative) speed
+    % --- North Speed ---
+    subplot(3,1,2);
+    plot(t, Vcggs(2,:), '.k');
+    title('North', 'FontName','Arial', 'FontSize',16, 'FontWeight','Bold');
+    xlabel('Time (s)', 'FontName','Arial', 'FontSize',12, 'FontWeight','Bold');
+    ylabel('Speed (m/s)', 'FontName','Arial', 'FontSize',12, 'FontWeight','Bold');
+    grid on;
+    set(gca, 'FontName','Arial', 'FontSize',8, 'FontWeight','Bold');
 
-    for k = 1:n
-        eSpd(k)   = Vcggs(1,k);
-        nSpd(k)   = Vcggs(2,k);
-        zSpd(k)   = Vcggs(3,k);
-        relSpd(k) = norm(Vcggs(:,k));
-    end
-    % [] Extracts ENZ speeds and computes total speed.
-
-    Window = figure( ...
-        'Color','w', ...
-        'Name','Speeds (E/N/Z/Relative)', ...
-        'NumberTitle','Off');
-    % [] New figure window.
-
-    % common x settings
-    xlim_   = [0,70];
-    xtick_  = 0:7:70;
-
-    %% 1) East‐speed subplot
-    ax1 = subplot(2,2,1,'Parent',Window);
-    set(ax1, ...
-        'FontName','Arial','FontSize',8,'FontWeight','Bold', ...
-        'NextPlot','Add', ...
-        'XGrid','On','YGrid','On', ...
-        'XLim',xlim_, 'XTick',xtick_, ...
-        'YLim',[0,500], 'YTick',0:50:500);
-    % [] Axes for “East” speed
-
-    plot(t, eSpd, ...
-        'Color','k', ...
-        'LineStyle','None', ...
-        'Marker','.', ...
-        'Parent',ax1);
-    % [] Plot East‐speed vs. Time
-
-    title(ax1, 'East', ...
-        'FontName','Arial','FontSize',16,'FontWeight','Bold');
-    xlabel(ax1, 'Time (s)', ...
-        'FontName','Arial','FontSize',12,'FontWeight','Bold');
-    ylabel(ax1, 'Speed (m/s)', ...
-        'FontName','Arial','FontSize',12,'FontWeight','Bold');
-
-
-    %% 2) North‐speed subplot
-    ax2 = subplot(2,2,2,'Parent',Window);
-    set(ax2, ...
-        'FontName','Arial','FontSize',8,'FontWeight','Bold', ...
-        'NextPlot','Add', ...
-        'XGrid','On','YGrid','On', ...
-        'XLim',xlim_, 'XTick',xtick_, ...
-        'YLim',[-150,0], 'YTick',-150:15:0);
-    % [] Axes for “North” speed
-
-    plot(t, nSpd, ...
-        'Color','k','LineStyle','None','Marker','.', ...
-        'Parent',ax2);
-    title(ax2, 'North', ...
-        'FontName','Arial','FontSize',16,'FontWeight','Bold');
-    xlabel(ax2, 'Time (s)', ...
-        'FontName','Arial','FontSize',12,'FontWeight','Bold');
-    ylabel(ax2, 'Speed (m/s)', ...
-        'FontName','Arial','FontSize',12,'FontWeight','Bold');
-
-
-    %% 3) Zenith‐speed subplot
-    ax3 = subplot(2,2,3,'Parent',Window);
-    set(ax3, ...
-        'FontName','Arial','FontSize',8,'FontWeight','Bold', ...
-        'NextPlot','Add', ...
-        'XGrid','On','YGrid','On', ...
-        'XLim',xlim_, 'XTick',xtick_, ...
-        'YLim',[-200,800], 'YTick',-200:100:800);
-    % [] Axes for “Zenith” speed
-
-    plot(t, zSpd, ...
-        'Color','k','LineStyle','None','Marker','.', ...
-        'Parent',ax3);
-    title(ax3, 'Zenith', ...
-        'FontName','Arial','FontSize',16,'FontWeight','Bold');
-    xlabel(ax3, 'Time (s)', ...
-        'FontName','Arial','FontSize',12,'FontWeight','Bold');
-    ylabel(ax3, 'Speed (m/s)', ...
-        'FontName','Arial','FontSize',12,'FontWeight','Bold');
-
-
-    %% 4) Relative‐speed subplot
-    ax4 = subplot(2,2,4,'Parent',Window);
-    set(ax4, ...
-        'FontName','Arial','FontSize',8,'FontWeight','Bold', ...
-        'NextPlot','Add', ...
-        'XGrid','On','YGrid','On', ...
-        'XLim',xlim_, 'XTick',xtick_, ...
-        'YLim',[0,1000], 'YTick',0:100:1000);
-    % [] Axes for “Relative” speed
-
-    plot(t, relSpd, ...
-        'Color','k','LineStyle','None','Marker','.', ...
-        'Parent',ax4);
-    title(ax4, 'Relative', ...
-        'FontName','Arial','FontSize',16,'FontWeight','Bold');
-    xlabel(ax4, 'Time (s)', ...
-        'FontName','Arial','FontSize',12,'FontWeight','Bold');
-    ylabel(ax4, 'Speed (m/s)', ...
-        'FontName','Arial','FontSize',12,'FontWeight','Bold');
-
+    % --- Zenith Speed ---
+    subplot(3,1,3);
+    plot(t, Vcggs(3,:), '.k');
+    title('Zenith', 'FontName','Arial', 'FontSize',16, 'FontWeight','Bold');
+    xlabel('Time (s)', 'FontName','Arial', 'FontSize',12, 'FontWeight','Bold');
+    ylabel('Speed (m/s)', 'FontName','Arial', 'FontSize',12, 'FontWeight','Bold');
+    grid on;
+    set(gca, 'FontName','Arial', 'FontSize',8, 'FontWeight','Bold');
+    
 end

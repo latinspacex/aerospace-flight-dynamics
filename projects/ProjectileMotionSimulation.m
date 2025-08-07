@@ -24,64 +24,58 @@ C = ConstantsEom;
 v0 = 827;
 % [m/s]Initial vehicle speed WRT to the ground station.
 
-C.Vcggs = [v0 * cos(C.el) * sin(C.az); v0 * cos(C.el) * cos(C.az); v0 * sin(C.el)];
+Vcggs0 = [v0 * cos(C.el) * sin(C.az); v0 * cos(C.el) * cos(C.az); v0 * sin(C.el)];
 % [m/s]Initial vehicle velocity WRT the ground station in ENZ coordinates.
 
 %% Numerical Integration:
 
-to = [0,70];
+to = [0,200];
 % [s]Modeling time.
 
-S0 = [ C.Rcggs; C.Vcggs; C.q0; C.omega0 ];
+S0 = [ C.Rcggs; Vcggs0; C.q0; C.omega0 ];
 % [m,m/s]Initial vehicle state WRT the ground station in ENZ coordinates.
 
+% --- Final ODE options with correctly passed Jacobian ---
 opts = odeset( ...
-    'RelTol',    1E-10, ...
-    'Events',    @(t,S) hitAltitude(t,S,C) ...
+    'RelTol',    1E-5, ...
+    'AbsTol',    1e-5, ...
+    'Events',    @(t,S) hitAltitude(t,S,C), ...
+    'OutputFcn', @odeProgressPlotter, ...
+    'Jacobian',  @(t,S) ProjectileMotionJacobian(t,S,C) ... % <-- FINAL CORRECTION
 );
 
-S = ode45(@(t,S) ProjectileMotionEom(t,S,C), to, So, opts);
-
-%S = ode45(@(t,S)ProjectileMotionEom(t,S,C),to,So,C.Options);
-% []Numerically integrates the equations of motion.
+[t,S] = ode15s(@(t,S) ProjectileMotionEom(t,S,C), to, S0, opts);
+S = S.';
+t = t.';
 
 %% Plot Results:
 
-t = S.x;
-% [s]Time vector.
+fprintf('Simulation finished. Now generating plots...\n');
 
-Rcggs = S.y(1:3,:);
-% [m]Vehicle positions WRT the ground station in ENZ coordinates.
+% --- Extract final data for plotting ---
+Rcggs = S(1:3,:);
+Vcggs = S(4:6,:);
 
-Vcggs = S.y(4:6,:);
-% [m/s]Vehicle velocities WRT the ground station in ENZ coordinates.
-
+% --- Call all plotting functions ---
 PlotAltitude(t,Rcggs,C);
-% []Plots the altitude above mean equator WRT to time.
-
 PlotDisplacements(t,Rcggs);
-% []Plots the Eastern, Northern, & Azimuth displacement WRT to time.
-
 PlotSpeeds(t, Vcggs);
-% []Plots the Eastern, Northern, & Azimuth speeds WRT to time.
-
 PlotAzEl(t, Rcggs);
-% []Plots the Azimuth & Elevation angles in ENZ coordinates vs. time.
-
 PlotInertialAcceleration(t, Rcggs, Vcggs, C);
-% []Plots the Intertial acceleration WRT to the ground station vs. time.
-
 PlotDynamicPressure(t, Rcggs, Vcggs, C);
-% []Plots the projectile's Dynamic Pressure vs. Time.
+PlotRollPitchYaw(t,S);
+PlotAngularRates(t,S);
+PlotQuaternion(t,S);
+
+fprintf('All plots have been generated.\n');
 
 %% Print Simulation Time:
 
 SimulationTime = toc;
 % [s]Stops the program timer.
 
-SimulationTimeString = 'Simulation Complete! (%0.3f seconds)\n';
+SimulationTimeString = 'Total Simulation and Plotting Time: (%0.3f seconds)\n';
 % []Formatted string.
 
 fprintf(SimulationTimeString,SimulationTime);
 % []Prints the simulation time on the command window.
-%===================================================================================================

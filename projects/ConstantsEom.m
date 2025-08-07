@@ -17,7 +17,9 @@ function C = ConstantsEom
 
     C.omega0 = [0; 0; 0];
     % [rad/s] initial body‐rate (no spin) 
-    
+
+    C.Rcpcg = [-0.001; 0; 0];
+    % [m]Postion of center of pressure WRT center of gravity in body coordinates.
 
 
     %----------------------------------------------------------------------
@@ -49,7 +51,7 @@ function C = ConstantsEom
 
     %----------------------------------------------------------------------
     
-    C.acg = (6.00225E-3) * pi;
+    C.acg = 6006.25 * pi * 1e-6; 
     % [m^2]Vehicle reference area.
 
     C.Cl = 0.173;
@@ -64,7 +66,7 @@ function C = ConstantsEom
     C.Ixx = 0.0630656250;
     % [kg-m^2]Inertial tensor, xx component.
 
-    C.Iyy = 01.3440328125;
+    C.Iyy = 1.3440328125;
     % [kg-m^2]Inertial tensor, yy component.
 
     C.Izz = C.Iyy;
@@ -73,16 +75,16 @@ function C = ConstantsEom
     C.Ixy = 0.1579431538;
     % [kg-m^2]Inertial tensor, xy component.
 
-    C.Ixz = Ixy;
+    C.Ixz = C.Ixy;
     % [kg-m^2]Inertial tensor, xz component.
 
-    C.Iyz = Ixy;
+    C.Iyz = C.Ixy;
     % [kg-m^2]Inertial tensor, yz component.
 
     C.Icg = [...
-           Ixx,  0, Ixz; ...
-           0,  Iyy,   0; ...
-           Ixz,  0, Izz];
+           C.Ixx,  -C.Ixy, -C.Ixz; ...
+          -C.Ixy,   C.Iyy, -C.Iyz; ...
+          -C.Ixz,  -C.Iyz,  C.Izz];
     % [kg-m^2]Inertial tensor.
 
     %----------------------------------------------------------------------

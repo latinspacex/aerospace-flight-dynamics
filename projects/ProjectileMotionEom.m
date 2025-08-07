@@ -9,9 +9,7 @@ function dSdt = ProjectileMotionEom(~,S,C)
     q = S(7:10);
     % [–] quaternion body→ENZ
 
-    qw = q(1); qx = q(2); qy = q(3); qz = q(4);
-
-    omega  = S(11:13);      
+    omega_bod = S(11:13);
     % [rad/s] body‐rates
 
     %----------------------------------------------------------------------
@@ -44,49 +42,63 @@ function dSdt = ProjectileMotionEom(~,S,C)
 
     %----------------------------------------------------------------------
 
-    ned2bod = [ ...
-                qw^2+qx^2-qy^2-qz^2,     2*(qx*qy+qw*qz),       2*(qx*qz-qw*qy); ... 
-                2*(qx*qy-qw*qz),       qw^2-qx^2+qy^2-qz^2,     2*(qy*qz+qw*qx); ...
-                2*(qx*qz+qw*qy),         2*(qy*qz-qw*qx),     qw^2-qx^2-qy^2+qz^2 ];
-
-    roll  = atan2( C_ned2bod(2,3), C_ned2bod(3,3) );
-    pitch = asin( -C_ned2bod(1,3) );
-    yaw   = atan2( C_ned2bod(1,2), C_ned2bod(1,1) );
- 
+    qw = q(1); qx = q(2); qy = q(3); qz = q(4);
+    T_bod2enz = [ ...
+        1-2*(qy^2+qz^2),   2*(qx*qy-qw*qz),   2*(qx*qz+qw*qy); ...
+        2*(qx*qy+qw*qz),   1-2*(qx^2+qz^2),   2*(qy*qz-qw*qx); ...
+        2*(qx*qz-qw*qy),   2*(qy*qz+qw*qx),   1-2*(qx^2+qy^2)  ...
+    ];
+    T_enz2bod = T_bod2enz.';
 
     %----------------------------------------------------------------------
     % FORCES
 
-    Fd = -0.5 * C.Cd * rho * C.acg * vinf * Vinf;
+    Fd_enz = -0.5 * C.Cd * rho * C.acg * vinf * Vinf;
     % [N]Drag force in ENZ coordinates
 
-    Fm = 0.5 * C.Cl * rho * C.acg * vinf^2 * (cross(C.We,Vcge)/norm(cross(C.We,Vcge)));
-    % []Magnus force in ENZ coordinates.
+    omega_rel_air_bod = omega_bod - T_enz2bod*C.We;
+    omega_rel_air_enz = T_bod2enz * omega_rel_air_bod;
 
-    Fm = 
+    magnus_direction_vec = cross(omega_rel_air_enz, Vinf);
+    if norm(magnus_direction_vec) > 1e-9
+        magnus_unit_vec = magnus_direction_vec / norm(magnus_direction_vec);
+    else
+        magnus_unit_vec = [0; 0; 0];
+    end
 
-    g = -C.Gm * Rcge / rcge^3;
+    Fm_enz = 0.5 * C.Cl * rho * C.acg * vinf^2 * magnus_unit_vec;
+    % [N] Magnus force in ENZ coordinates.
+
+    g_enz = -C.Gm * Rcge / rcge^3;
     % [m/s^2]Acceleration due to gravity in ENZ coordinates.
 
     %----------------------------------------------------------------------
     % MOMENTS
 
-    Rcpcg = [-e3; 0; 0];
-    % [m]Postion of center of pressure WRT center of gravity in body coordinates.
+    Fd_bod = T_enz2bod * Fd_enz;
+    Fm_bod = T_enz2bod * Fm_enz;
 
-    Md = cross(Rcpcg,)
-
+    M_bod = cross(C.Rcpcg, Fd_bod) + cross(C.Rcpcg, Fm_bod);
 
     %----------------------------------------------------------------------
 
-    dSdt = zeros(6,1);
+    dSdt = zeros(13,1);
     % []Allocates memory for the state vector derivative.
 
     dSdt(1:3) = Vcggs;
     % [m/s]Vehicle velocity WRT the ground station in ENZ coordinates.
 
-    dSdt(4:6) = Fd / C.mcg + g - C.Agse - cross(C.We,cross(C.We,Rcggs)) - 2 * cross(C.We,Vcggs);
+    a_total_enz = (Fd_enz + Fm_enz) / C.mcg;
+
+    dSdt(4:6) = a_total_enz + g_enz - C.Agse - cross(C.We,cross(C.We,Rcggs)) - 2 * cross(C.We,Vcggs);
     % [m/s^2]Vehicle acceleration WRT the ground station in ENZ coordinates.
 
+    Omega_mat = [ 0,         -omega_bod(1), -omega_bod(2), -omega_bod(3);
+                  omega_bod(1),  0,          omega_bod(3), -omega_bod(2);
+                  omega_bod(2), -omega_bod(3),  0,          omega_bod(1);
+                  omega_bod(3),  omega_bod(2), -omega_bod(1),  0 ];
+    dSdt(7:10) = 0.5 * Omega_mat * q;
+
+    dSdt(11:13) = C.Icg \ (M_bod - cross(omega_bod, C.Icg * omega_bod));
+
 end
-%==========================================================================
