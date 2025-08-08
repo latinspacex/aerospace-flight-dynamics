@@ -1,107 +1,46 @@
 function C = ConstantsEom
+% Defines all physical and initial constants for the simulation.
 
-    C.Gm = 3.98600435436E14;
-    % [m^3/s^2]Gravitational parameter of the Earth.
+    % --- Environmental Constants ---
+    C.Gm = 3.98600435436E14; % [m^3/s^2] Gravitational parameter of the Earth
+    C.Re = 6378137;          % [m] Mean equatorial radius of the Earth
+    C.we = 7.292115e-5;      % [rad/s] Rotational speed of the Earth
+    C.g  = 9.80665;          % [m/s^2] Standard gravity
 
-    C.Re = 6378137;
-    % [m]Mean equatorial radius of the Earth.
+    % --- Ground Station (AT&T Stadium) ---
+    C.phigs = deg2rad(32 + 44/60 + 52/3600);    % [rad] Latitude
+    C.lambdags = -deg2rad(97 + 5/60 + 34/3600); % [rad] Longitude
+    C.hgs = 185;                               % [m] Altitude
 
-    C.we = 2 * pi / 86164.1;
-    % [rad/s]Rotational speed of the Earth.
-
-    C.g = 9.80665;
-    % [m/s^2]Standard acceleration due to gravity.
-
-    C.q0   = [1; 0; 0; 0];    
-    % [–] initial attitude (identity quaternion)
-
-    C.omega0 = [0; 0; 0];
-    % [rad/s] initial body‐rate (no spin) 
-
-    C.Rcpcg = [-0.001; 0; 0];
-    % [m]Postion of center of pressure WRT center of gravity in body coordinates.
-
-
-    %----------------------------------------------------------------------
-    % GROUND STATION: AT&T STADIUM
-
-    C.phigs = deg2rad(dms2degrees([32, 44, 52]));
-    % [rad]Ground station latitude.
-
-    C.lambdags = -deg2rad(dms2degrees([97, 5, 34]));
-    % [rad]Ground station longitude.
-
-    C.hgs = 185;
-    % [m]Ground station altitude above mean equator.
-
-    %--------------------------------------------------------------------
-
-
+    % --- Earth Frame Vectors in ENZ ---
     C.We = C.we * [0; cos(C.phigs); sin(C.phigs)];
-    % [rad/s]Rotational velocity of the Earth in ENZ coordinates.
-
     C.Rgse = (C.Re + C.hgs) * [0; 0; 1];
-    % [m]Ground station position WRT the Earth in ENZ coordinates
+    C.Vgse = cross(C.We, C.Rgse);
+    C.Agse = cross(C.We, C.Vgse);
 
-    C.Vgse = cross(C.We,C.Rgse);
-    % [m/s]Ground station velocity WRT the Earth in ENZ coordinates.
+    % --- Projectile Characteristics ---
+    C.mcg = 35;                        % [kg] Mass
+    C.Cl = 0.173;                      % [–] Magnus coefficient
+    C.Cd = 0.820;                      % [–] Drag coefficient
+    C.acg = 6006.25 * pi * 1e-6;       % [m^2] Reference area (mm^2 to m^2)
+    C.Rcpcg = [-0.001; 0; 0];           % [m] CP wrt CG (mm to m)
 
-    C.Agse = cross(C.We,C.Vgse);
-    % [m/s]Ground station acceleration WRT the Earth in ENZ coordinates.
+    % --- Inertia Tensor (Corrected Signs per Standard Convention) ---
+    Ixx = 0.0630656250;
+    Iyy = 1.3440328125;
+    Izz = 1.3440328125;
+    Ixy = 0.1579431538;
+    Ixz = 0.1579431538;
+    Iyz = 0.1579431538;
+    C.Icg = [ Ixx, -Ixy, -Ixz;
+             -Ixy,  Iyy, -Iyz;
+             -Ixz, -Iyz,  Izz ];
 
-    %----------------------------------------------------------------------
-    
-    C.acg = 6006.25 * pi * 1e-6; 
-    % [m^2]Vehicle reference area.
-
-    C.Cl = 0.173;
-    % []Magnus coefficient
-
-    C.Cd = 0.82;
-    % []Vehicle drag coefficient.
-
-    C.mcg = 35;
-    % [kg]Vehicle mass.
-
-    C.Ixx = 0.0630656250;
-    % [kg-m^2]Inertial tensor, xx component.
-
-    C.Iyy = 1.3440328125;
-    % [kg-m^2]Inertial tensor, yy component.
-
-    C.Izz = C.Iyy;
-    % [kg-m^2]Inertial tensor, zz component.
-
-    C.Ixy = 0.1579431538;
-    % [kg-m^2]Inertial tensor, xy component.
-
-    C.Ixz = C.Ixy;
-    % [kg-m^2]Inertial tensor, xz component.
-
-    C.Iyz = C.Ixy;
-    % [kg-m^2]Inertial tensor, yz component.
-
-    C.Icg = [...
-           C.Ixx,  -C.Ixy, -C.Ixz; ...
-          -C.Ixy,   C.Iyy, -C.Iyz; ...
-          -C.Ixz,  -C.Iyz,  C.Izz];
-    % [kg-m^2]Inertial tensor.
-
-    %----------------------------------------------------------------------
-    % INITIAL CONDITIONS
-
+    % --- Initial Conditions ---
     C.az = deg2rad(107);
-    % [rad]Initial vehicle azimuth angle.
-
     C.el = deg2rad(45);
-    % [rad]Initial vehicle elevation angle.
-
+    C.q0 = [1; 0; 0; 0];
+    C.omega0 = [0; 0; 0];
     C.Rcggs = [0; 0; 0];
-    % [m]Initial projectile position WRT the ground station in ENZ coordinates.
-
-    %----------------------------------------------------------------------
-
-    C.Options = odeset('RelTol',1E-10);
-    % []Adjusts the properties of the numerical integrator.
 
 end

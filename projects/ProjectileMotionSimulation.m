@@ -29,19 +29,19 @@ Vcggs0 = [v0 * cos(C.el) * sin(C.az); v0 * cos(C.el) * cos(C.az); v0 * sin(C.el)
 
 %% Numerical Integration:
 
-to = [0,200];
+to = [0, 200];
 % [s]Modeling time.
 
 S0 = [ C.Rcggs; Vcggs0; C.q0; C.omega0 ];
 % [m,m/s]Initial vehicle state WRT the ground station in ENZ coordinates.
 
-% --- Final ODE options with correctly passed Jacobian ---
+% --- Final, Most Robust ODE Options ---
 opts = odeset( ...
-    'RelTol',    1E-5, ...
-    'AbsTol',    1e-5, ...
+    'RelTol',    1e-4, ... % A relaxed tolerance is essential for this problem
+    'AbsTol',    1e-4, ...
     'Events',    @(t,S) hitAltitude(t,S,C), ...
     'OutputFcn', @odeProgressPlotter, ...
-    'Jacobian',  @(t,S) ProjectileMotionJacobian(t,S,C) ... % <-- FINAL CORRECTION
+    'JPattern',  jpattern(C) ... % Provide the sparsity pattern for maximum stability
 );
 
 [t,S] = ode15s(@(t,S) ProjectileMotionEom(t,S,C), to, S0, opts);
@@ -56,16 +56,37 @@ fprintf('Simulation finished. Now generating plots...\n');
 Rcggs = S(1:3,:);
 Vcggs = S(4:6,:);
 
-% --- Call all plotting functions ---
+% --- Call all plotting functions as specified by the assignment ---
+
+% Figure 1: Altitude, Linear Range, Haversine Range
 PlotAltitude(t,Rcggs,C);
-PlotDisplacements(t,Rcggs);
-PlotSpeeds(t, Vcggs);
+
+% Figure 2: Relative Speed, Ground Speed, Dynamic Pressure
+PlotSpeeds(t, S, C);
+
+% Figure 3: East, North, Zenith Displacements
+PlotDisplacements(t, Rcggs);
+
+% Figure 4: East, North, Zenith Speeds
+PlotVelocity(t, Vcggs);
+
+% Figure 5: Body-Frame and Inertial Acceleration
+PlotInertialAcceleration(t, S, C);
+
+% Figure 6: Azimuth and Elevation
 PlotAzEl(t, Rcggs);
-PlotInertialAcceleration(t, Rcggs, Vcggs, C);
-PlotDynamicPressure(t, Rcggs, Vcggs, C);
+
+% Figure 7: Roll, Pitch, and Yaw Angles
 PlotRollPitchYaw(t,S);
+
+% Figure 8: Rotational Velocity Components and Magnitude
 PlotAngularRates(t,S);
+
+% Figure 9: Quaternion Components
 PlotQuaternion(t,S);
+
+% --- Bonus: 3D Trajectory Plot ---
+Plot3DTrajectory(t, Rcggs);
 
 fprintf('All plots have been generated.\n');
 
